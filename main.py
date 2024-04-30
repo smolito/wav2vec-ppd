@@ -11,8 +11,6 @@ import torch
 import torchaudio
 import fnmatch
 import jiwer
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 import wave
 
 matplotlib.rcParams["figure.figsize"] = [16.0, 5.5]
