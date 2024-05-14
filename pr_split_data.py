@@ -12,8 +12,6 @@ import torchaudio
 import fnmatch
 import jiwer
 from jiwer import wer
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 import wave
 
 matplotlib.rcParams["figure.figsize"] = [9.0, 4.3]
@@ -35,18 +33,22 @@ def read_pr_reference_file(path2file):
 
     return refs
 
+
 torch.random.manual_seed(0)
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print(torchaudio.list_audio_backends())
 print(torch.__version__)
 print(torchaudio.__version__)
 print("torchaudio backend:", torchaudio.get_audio_backend())
+# backend: soundfile for Win, Sox for Linux
 print(device)
 
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 print("Sample Rate:", bundle.sample_rate)
-print("Labels:", bundle.get_labels())
+print("Popisky (labely): ", bundle.get_labels())
 
 model = bundle.get_model().to(device)
 print(model.__class__)
@@ -78,7 +80,8 @@ class GreedyCTCDecoder(torch.nn.Module):
 
 if __name__ == "__main__":
 
-    pd_intel_root = r"PD_intelligibilityData/"
+    pd_intel_root = r"PD_intelligibilityData/" # run through all the data
+    # pd_intel_root = r"quickrun/" # test run
     data2csv = []
     start_time = time.time()
 
@@ -155,56 +158,58 @@ if __name__ == "__main__":
 
                             with torch.inference_mode():
                                 features, _ = model.extract_features(waveform)
+                                # print("delka features: ", len(features))
 
                                 # LAYERS VISUALIZATION
-                                # if not os.path.exists(
-                                #         os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1]))):
-                                #     os.makedirs(
-                                #         os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1])))
-                                #
-                                # for i, feats in enumerate(features):
-                                #     # print("print feats size/shape")
-                                #     # get_tensor_shape = feats.shape
-                                #     # get_tensor_shape = list(get_tensor_shape)
-                                #     # print(get_tensor_shape)
-                                #     # print("print single feats i: " + str(i))
-                                #     # print(feats[0])
-                                #
-                                #     plt.imshow(feats[0].cpu(),
-                                #                vmin=torch.min(feats[0].cpu()),
-                                #                vmax=torch.max(feats[0].cpu()),
-                                #                cmap="ocean",  # jet, turbo, rainbow, cubehelix
-                                #                aspect="auto")
-                                #     plt.colorbar()
-                                #     # plt.tight_layout()
-                                #     plt.title(f"Příznaková vrstva transformeru {i + 1}")
-                                #     plt.xlabel("Dimenze příznaku")
-                                #     plt.ylabel("rámec - čas")
-                                #
-                                #     path2fig = os.path.join("_plots/pr_split", root_folder, group_folder,
-                                #                             (str(word_with_id[0][0]) + "_" + word_with_id[0][1])) \
-                                #                + "/" + word_with_id[0][1] + "_imshow" + "_layer_" + str(i) + ".png"
-                                #     plt.savefig(path2fig)
-                                #     plt.close("all")
+                                if not os.path.exists(
+                                        os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1]))):
+                                    os.makedirs(
+                                        os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1])))
+
+                                for i, feats in enumerate(features):
+                                    # print("print feats size/shape")
+                                    # get_tensor_shape = feats.shape
+                                    # get_tensor_shape = list(get_tensor_shape)
+                                    # print(get_tensor_shape)
+                                    # print("print single feats i: " + str(i))
+                                    # print(feats[0])
+
+                                    plt.imshow(feats[0].cpu(),
+                                               vmin=torch.min(feats[0].cpu()),
+                                               vmax=torch.max(feats[0].cpu()),
+                                               cmap="ocean",  # jet, turbo, rainbow, cubehelix
+                                               aspect="auto")
+                                    plt.colorbar()
+                                    # plt.tight_layout()
+                                    plt.title(f"Příznaková vrstva transformeru {i + 1}")
+                                    plt.xlabel("Dimenze příznaku")
+                                    plt.ylabel("rámec - čas")
+
+                                    path2fig = os.path.join("_plots/pr_split", root_folder, group_folder,
+                                                            (str(word_with_id[0][0]) + "_" + word_with_id[0][1])) \
+                                               + "/" + word_with_id[0][1] + "_imshow" + "_layer_" + str(i) + ".png"
+                                    plt.savefig(path2fig)
+                                    plt.close("all")
 
                             # FEATURE CLASSIFICATION (in logits, not probability)
                             print("... doing classification")
                             with torch.inference_mode():
                                 inference, _ = model(waveform)
+                                print("delka inference: ", len(inference))
 
-                                # # FEATURE CLASSIFICATION VIS
-                                # plt.imshow(inference[0].cpu().T)
-                                # plt.title("Výsledek klasifikace")
-                                # plt.xlabel("Čas")
-                                # plt.ylabel("Třída")
-                                # plt.colorbar(orientation="vertical")
-                                # # plt.tight_layout()
-                                #
-                                # path2fig = os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1])) \
-                                #            + "/" + word_with_id[0][1] + "_classification" + ".png"
-                                # plt.savefig(path2fig)
-                                # plt.close("all")
-                                # # print("Class labels:", bundle.get_labels())
+                                # FEATURE CLASSIFICATION VIS
+                                plt.imshow(inference[0].cpu().T)
+                                plt.title("Výsledek klasifikace")
+                                plt.xlabel("Čas")
+                                plt.ylabel("Třída")
+                                plt.colorbar(orientation="vertical")
+                                # plt.tight_layout()
+
+                                path2fig = os.path.join("_plots/pr_split", root_folder, group_folder, (str(word_with_id[0][0]) + "_" + word_with_id[0][1])) \
+                                           + "/" + word_with_id[0][1] + "_classification" + ".png"
+                                plt.savefig(path2fig)
+                                plt.close("all")
+                                # print("Class labels:", bundle.get_labels())
 
                             # GENERATING TRANSCRIPTS
                             print("... generating transcript")

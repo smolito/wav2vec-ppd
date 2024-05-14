@@ -24,6 +24,7 @@ print(torchaudio.list_audio_backends())
 print(torch.__version__)
 print(torchaudio.__version__)
 print("torchaudio backend:", torchaudio.get_audio_backend())
+# backend: soundfile for Win, Sox for Linux
 print(device)
 
 # choose a control group to analyze
@@ -37,22 +38,22 @@ bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 model = bundle.get_model().to(device)
 # print(model.__class__)
 
-with open('_assets/reference_b.txt', 'r') as file:
+with open('../_assets/reference_b.txt', 'r') as file:
     reference_b = file.read().replace('\n', '')
     file.close()
 
-with open('_assets/reference_pr.txt', 'r') as file:
+with open('../_assets/reference_pr.txt', 'r') as file:
     reference_pr = file.read().replace('\n', '')
     file.close()
 
-with open('_assets/reference_fb.txt', 'r') as file:
+with open('../_assets/reference_fb.txt', 'r') as file:
     reference_fb = file.read().replace('\n', '')
     file.close()
 
 
 def rows2csv(data2write):
     if not os.path.exists(csvFILE):
-        os.makedirs("_transcripts", exist_ok=True)
+        os.makedirs("../_transcripts", exist_ok=True)
     with open(csvFILE, "w", newline="", encoding='UTF8') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(header)
